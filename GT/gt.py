@@ -34,6 +34,7 @@ STREAM_PRESETS = {
 }
 
 PROFILE = "EQUAL"
+# PROFILE = "MEDIUM"
 
 WIDTH  = STREAM_PRESETS[PROFILE]["WIDTH"]
 HEIGHT = STREAM_PRESETS[PROFILE]["HEIGHT"]
@@ -44,7 +45,7 @@ FPS    = STREAM_PRESETS[PROFILE]["FPS"]
 # CONFIGURAÇÃO DE RASTREAMENTO E GRAVAÇÃO
 # ============================================================
 
-SHOW_INFOS = False  # Exibe informações de posição e orientação na tela
+SHOW_INFOS = True  # Exibe informações de posição e orientação na tela
 
 
 # ============================================================
@@ -58,7 +59,7 @@ CAM_Z = 2.79 # Altura da câmera em relação ao chão
 # DIMENSÃO REAL DO ROBÔ (PARA AJUSTE DE ESCALA)
 # ============================================================
 
-ROBO_H = 0.15 # Ex: 15 cm
+ROBO_H = 0.08 # Ex: 8 cm
 
 # ============================================================
 # ID DO ROBÔ E VARIÁVEIS DE GRAVAÇÃO
@@ -80,7 +81,7 @@ final_frame = None
 # CARREGA H
 # ============================================================
 
-H_FILE = Path("H.npy")
+H_FILE = Path("C:\\Users\\igojo\\Desktop\\SLAM-Teaching\\GT\\H.npy")
 
 try:
     H = np.load(str(H_FILE))
@@ -125,11 +126,23 @@ ssh.connect(RASPBERRY_IP, username=USERNAME, password=PASSWORD)
 ssh.exec_command("pkill -f rpicam-vid")
 time.sleep(1)
 
+
 cmd = (
     f"rpicam-vid -t 0 "
-    f"--width {WIDTH} --height {HEIGHT} --framerate {FPS} "
-    f"--codec mjpeg --inline --listen -o tcp://0.0.0.0:{STREAM_PORT}"
+    f"--nopreview "
+    f"--mode 3280:2464 "
+    f"--width 720 "
+    f"--height 720 "
+    f"--framerate 20 "
+    f"--codec mjpeg "
+    f"--inline "
+    f"--listen "
+    f"-o tcp://0.0.0.0:{STREAM_PORT}"
 )
+
+
+print(f"[INFO] Iniciando stream com comando:\n{cmd}")
+
 ssh.exec_command(cmd)
 time.sleep(3)
 
@@ -164,6 +177,8 @@ while True:
         break
 
     clean_frame = frame.copy()
+    # print(f"[DEBUG] Frame recebido: {frame.shape[1]}x{frame.shape[0]}")
+    frame = cv2.resize(frame, (WIDTH, HEIGHT), interpolation=cv2.INTER_AREA)
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     corners_all, ids_raw, _ = detector.detectMarkers(gray)
