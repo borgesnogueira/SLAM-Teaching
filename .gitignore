@@ -1,0 +1,16 @@
+.pytest_cache/
+__pycache__/
+
+# ESP-IDF built binaries (nunca commitar isso)
+build/
+build_*_*/
+sdkconfig
+sdkconfig.old
+
+# Outros arquivos temporários do ESP-IDF
+managed_components/
+dependencies.lock
+
+# Pastas de IDE (opcional, mas recomendado)
+.vscode/
+.idea/
