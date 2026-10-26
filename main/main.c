@@ -29,8 +29,42 @@
 #include <sys/time.h>
 #include <unistd.h>
 
-extern int esp32_camera_ov2640_set_hwindow_correction(int val);
-extern int esp32_camera_ov2640_get_hwindow_correction(void);
+// Correção horizontal da janela do OV2640, aplicada via set_res_raw (sem patch no managed_components).
+// Recorta |px| colunas do sensor: px<0 remove à direita (janela vai p/ esquerda), px>0 remove à esquerda.
+// Válido apenas para framesizes 4:3 (QVGA, VGA, SVGA, ...).
+static int camera_hwindow_correction = 0;
+
+static esp_err_t camera_apply_hwindow_correction(sensor_t *sensor, int px)
+{
+    framesize_t fs = sensor->status.framesize;
+    if (sensor->id.PID != OV2640_PID || resolution[fs].aspect_ratio != ASPECT_RATIO_4X3) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    // Mesmos valores que ov2640.c:set_framesize usa para 4:3 (1600x1200 em UXGA).
+    int mode, max_x, max_y;
+    if (fs <= FRAMESIZE_CIF) {
+        mode = 2; max_x = 400; max_y = 296;   // OV2640_MODE_CIF
+    } else if (fs <= FRAMESIZE_SVGA) {
+        mode = 1; max_x = 800; max_y = 600;   // OV2640_MODE_SVGA
+    } else {
+        mode = 0; max_x = 1600; max_y = 1200; // OV2640_MODE_UXGA
+    }
+
+    int crop = abs(px);
+    if (crop >= max_x - resolution[fs].width) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    int offset_x = (px > 0) ? px : 0;
+    max_x -= crop;
+
+    if (sensor->set_res_raw(sensor, mode, 0, 0, 0, offset_x, 0, max_x, max_y,
+                            resolution[fs].width, resolution[fs].height, false, false) != 0) {
+        return ESP_FAIL;
+    }
+    camera_hwindow_correction = px;
+    return ESP_OK;
+}
 // ---------------------------------------------------------- DEFINES
 // Configuração Mecânica
 #define WHEEL_RADIUS            0.0823f   // Metros (4,15cm)
@@ -304,11 +338,12 @@ static esp_err_t camera_init(void)
     sensor_t *sensor = esp_camera_sensor_get();
     if (sensor) {
         ESP_LOGI(TAG_CAM, "Sensor detectado: PID=0x%02x", sensor->id.PID);
-        esp32_camera_ov2640_set_hwindow_correction(-64);
-        if (sensor->set_framesize) {
-            sensor->set_framesize(sensor, sensor->status.framesize);
+        esp_err_t corr_err = camera_apply_hwindow_correction(sensor, -64);
+        if (corr_err == ESP_OK) {
+            ESP_LOGI(TAG_CAM, "Correção horizontal aplicada: %d px", camera_hwindow_correction);
+        } else {
+            ESP_LOGW(TAG_CAM, "Correção horizontal não aplicada: %s", esp_err_to_name(corr_err));
         }
-        ESP_LOGI(TAG_CAM, "Correção horizontal aplicada: %d px", esp32_camera_ov2640_get_hwindow_correction());
     } else {
         ESP_LOGW(TAG_CAM, "esp_camera_sensor_get() retornou NULL");
     }
