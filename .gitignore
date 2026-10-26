@@ -14,7 +14,10 @@ dependencies.lock
 # Pastas de IDE (opcional, mas recomendado)
 .vscode/
 .idea/
-# Python: credenciais e dados gerados nos experimentos
-python/config/env.txt
-python/dados/*
-!python/dados/.gitkeep
+# Utilitários: credenciais e dados gerados nos experimentos
+utilitarios/config/env.txt
+utilitarios/dados/*
+!utilitarios/dados/.gitkeep
+
+# Cópia antiga de um repositório git (não versionar)
+.git copy/

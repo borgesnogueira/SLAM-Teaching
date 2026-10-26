@@ -1,12 +1,14 @@
-# SLAM: robô diferencial + ground truth por câmera
+# Utilitários: bibliotecas e exemplos em Python
 
-Bibliotecas e exemplos em Python para fazer experimentos de odometria e SLAM
-com o robô `swarm/robot2`. Esta pasta (`python/`) fica dentro do repositório
-SLAM-Teaching, cuja raiz é o firmware ESP-IDF do robô. Os comandos abaixo
-assumem que você está **dentro de `python/`**:
+Referência completa da pasta `utilitarios/` do SLAM-Teaching: bibliotecas e
+exemplos em Python para fazer experimentos de odometria e SLAM com o robô
+`swarm/robot2`. O firmware do robô fica em [`../firmware`](../firmware), e a
+visão geral do repositório está no [README da raiz](../README.md).
+
+Os comandos abaixo assumem que você está **dentro de `utilitarios/`**:
 
 ```bash
-cd SLAM-Teaching/python
+cd SLAM-Teaching/utilitarios
 ```
 
 - **`robo.py`** conversa com o robô pela rede: odometria, velocidade das rodas,
@@ -71,8 +73,8 @@ Comparar as duas é o ponto central dos exemplos.
 
 ```
 SLAM-Teaching/
-├── main/main.c, CMakeLists.txt, ...   # firmware ESP-IDF do robô (idf.py build flash)
-└── python/
+├── firmware/          # firmware ESP-IDF do robô (ver README da raiz)
+└── utilitarios/
     ├── main.py            # experimento simples: anda 10 s lendo odometria + GT e grava
     ├── robo.py            # robô: MQTT, câmera embarcada (UDP) e gravação
     ├── ground_truth.py    # pose real pela câmera do teto (ArUco), em segundo plano
@@ -97,7 +99,7 @@ SLAM-Teaching/
         └── exemplo_leitura.py # plota a ground truth do recording.csv
 ```
 
-Os módulos de `python/` encontram `config/` e `dados/` pelo próprio caminho. Por
+Os módulos de `utilitarios/` encontram `config/` e `dados/` pelo próprio caminho. Por
 isso você pode rodar os scripts de qualquer pasta.
 
 ---
@@ -357,7 +359,7 @@ de preferência num `finally`.
 | `set_odometry(x=0, y=0, theta=0)` | redefine a odometria no robô |
 | `get_odometry_timestamp_us()` | instante da última odometria (µs, relógio do robô) |
 | `get_wheel_speeds()` | `(v_left, v_right)` em m/s |
-| `get_observation()` | `(r, theta, label)` da última observação publicada pelo robô |
+| `get_observation()` | `(r, theta, label)` da última observação em `swarm/robot2/observation`. O firmware atual **não publica** esse tópico: fica `(0, 0, -1)` até alguém publicar. |
 
 Os valores são atualizados em segundo plano. As funções `get_*` só devolvem
 o último valor recebido, sem esperar por um novo.
@@ -591,4 +593,5 @@ em segundo plano (`Movimento`).
 | `Erro ao iniciar: ... Authentication` (GT) | Credenciais em `config/env.txt`. |
 | Avisos `QObject::killTimer` ao sair | Inofensivos: vêm das janelas do OpenCV abertas em outra thread. |
 | `Erro ao iniciar: [Errno 2] ... env.txt` (GT) | Falta criar `config/env.txt`: `cp config/env.example config/env.txt`. |
-| Compilar o firmware após mover a pasta | Rode `idf.py fullclean` uma vez: a pasta `build/` guarda o caminho antigo. |
+| Compilar o firmware após mover a pasta | Rode `idf.py fullclean` uma vez dentro de `firmware/`: a pasta `build/` guarda o caminho antigo. |
+| Odometria volta a zero sozinha logo no começo | O robô entra em RUNNING na primeira mensagem MQTT e zera a odometria nesse instante. Chame `set_odometry()` depois de conectar e mandar algum comando. |
