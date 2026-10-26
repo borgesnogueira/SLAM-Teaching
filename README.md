@@ -172,8 +172,11 @@ idf.py -p /dev/ttyUSB0 flash monitor   # Ctrl+] sai do monitor
 
 - As dependências (`espressif/esp32-camera` e `espressif/led_strip`) são
   baixadas sozinhas pelo gerenciador de componentes, para `managed_components/`.
-- O `sdkconfig.defaults` liga PSRAM octal e a tabela de partição com app grande
-  (15 MB), necessárias para a câmera.
+- O `sdkconfig.defaults` liga a PSRAM octal (onde ficam os frames da câmera) e
+  a tabela de partição padrão "single app large" do ESP-IDF (app de ~1,5 MB).
+  O `partitions.csv` da pasta **não é usado** com essa configuração. Ele só vale
+  se você escolher "Custom partition table" no `idf.py menuconfig`, e nesse caso
+  precisa de flash de 16 MB.
 - `build/`, `sdkconfig` e `managed_components/` são gerados na compilação e
   ficam fora do git.
 - Também há um **devcontainer** em `firmware/.devcontainer/`, com a imagem
@@ -326,8 +329,8 @@ SLAM-Teaching/
 ├── .gitignore
 ├── firmware/                  # ── programa do robô (ESP-IDF) ──
 │   ├── CMakeLists.txt         # projeto ESP-IDF
-│   ├── sdkconfig.defaults     # PSRAM octal, partição grande, ...
-│   ├── partitions.csv         # nvs + app de 15 MB
+│   ├── sdkconfig.defaults     # PSRAM octal, partição "single app large"
+│   ├── partitions.csv         # tabela alternativa (não usada por padrão)
 │   ├── .devcontainer/         # ambiente Docker com ESP-IDF
 │   └── main/
 │       ├── main.c             # todo o firmware
