@@ -983,8 +983,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
                     
                     if (l && r) {
                         xSemaphoreTake(robot_mutex, portMAX_DELAY);
-                        // O Python envia velocidade linear da roda (m/s). 
-                        // Converter para angular (rad/s): w = v / R
+                        // Referência de cada roda em rad/s (robo.py converte de m/s: w = v / R)
+                        // e vai direto para o PID, que compara com wl_meas/wr_meas (rad/s).
                         float v_l = cjson_item_to_float(l);
                         float v_r = cjson_item_to_float(r);
                         
@@ -1219,7 +1219,7 @@ void vTaskPublishOdometry(void *pvParam) {
             y = robot.y;
             theta = robot.theta;
             odom_ts_us = robot.odom_ts_us;
-            vl = robot.wl_meas; // Envia m/s para o Python
+            vl = robot.wl_meas; // rad/s (robo.py converte para m/s: v = w * R)
             vr = robot.wr_meas;
             xSemaphoreGive(robot_mutex);
 
@@ -1239,7 +1239,7 @@ void vTaskPublishOdometry(void *pvParam) {
             }
 
             // 2. Publica Velocidades
-            // JSON: {"velocidades": "vl, vr"}
+            // JSON: {"wheels": "wl, wr"} em rad/s
             snprintf(json_buffer, sizeof(json_buffer), 
                 "{\"wheels\": \"%.3f, %.3f\"}", vl, vr);
             int pub_wheels = esp_mqtt_client_publish(mqtt_client, "swarm/robot2/telemetry/wheels", json_buffer, 0, 0, 0);
